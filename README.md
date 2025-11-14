@@ -97,6 +97,13 @@ This project is very much still a work in progress, please report any issues via
 
 ## Changelog
 
+### 5.4.0
+
+- Added `roster.update()` method to update fantasy roster player positions
+- Added `PUT` HTTP method support to the core API
+- Fixed `api()` method to properly write request body data for PUT/POST requests
+- Added proper Content-Type and Content-Length headers for XML payloads
+
 ### 5.3.0
 
 - Split the roster resource into 2 functions (which was avoided in the past). `roster.fetch` will work the same as `roster.players` always has. `roster.players` will be backwards compatible but will now allow an optional additional "subresource" parameter that return additional information about the roster being queried.
