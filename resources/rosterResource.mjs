@@ -72,6 +72,45 @@ class RosterResource {
         throw e;
       });
   }
+
+  // update roster positions
+  update(teamKey, coverageType, coverageValue, players, cb = () => {}) {
+    let url = `https://fantasysports.yahooapis.com/fantasy/v2/team/${teamKey}/roster`;
+
+    // Build the XML for the roster update
+    let playersXml = "";
+    players.forEach((player) => {
+      playersXml += `
+        <player>
+          <player_key>${player.player_key}</player_key>
+          <position>${player.position}</position>
+        </player>`;
+    });
+
+    const xmlData = `<?xml version="1.0"?>
+      <fantasy_content>
+        <roster>
+          <coverage_type>${coverageType}</coverage_type>
+          <coverage_value>${coverageValue}</coverage_value>
+          <players>${playersXml}
+          </players>
+        </roster>
+      </fantasy_content>`;
+
+    return this.yf
+      .api(this.yf.PUT, url, xmlData)
+      .then((data) => {
+        const team = mapTeam(data.fantasy_content.team[0]);
+        const roster = mapRoster(data.fantasy_content.team[1].roster);
+        team.roster = roster;
+        cb(null, team);
+        return team;
+      })
+      .catch((e) => {
+        cb(e);
+        throw e;
+      });
+  }
 }
 
 export default RosterResource;

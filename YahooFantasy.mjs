@@ -39,6 +39,7 @@ class YahooFantasy {
 
     this.GET = "GET";
     this.POST = "POST";
+    this.PUT = "PUT";
 
     this.game = new Game(this);
     this.games = new Games(this);
@@ -264,6 +265,11 @@ class YahooFantasy {
       headers.Authorization = `Bearer ${this.yahooUserToken}`;
     }
 
+    if (postData) {
+      headers["Content-Type"] = "application/xml";
+      headers["Content-Length"] = Buffer.byteLength(postData);
+    }
+
     const options = {
       hostname: "fantasysports.yahooapis.com",
       path: `${url.replace(
@@ -275,38 +281,43 @@ class YahooFantasy {
     };
 
     return new Promise((resolve, reject) => {
-      https
-        .request(options, (resp) => {
-          let data = "";
+      const req = https.request(options, (resp) => {
+        let data = "";
 
-          resp.on("data", (chunk) => {
-            data += chunk;
-          });
+        resp.on("data", (chunk) => {
+          data += chunk;
+        });
 
-          resp.on("end", () => {
-            data = JSON.parse(data);
+        resp.on("end", () => {
+          data = JSON.parse(data);
 
-            if (data.error) {
-              if (/"token_expired"/i.test(data.error.description)) {
-                return this.refreshToken((err, data) => {
-                  if (err) {
-                    return reject(err);
-                  }
+          if (data.error) {
+            if (/"token_expired"/i.test(data.error.description)) {
+              return this.refreshToken((err, data) => {
+                if (err) {
+                  return reject(err);
+                }
 
-                  return resolve(this.api(method, url, postData));
-                });
-              } else {
-                return reject(data.error);
-              }
+                return resolve(this.api(method, url, postData));
+              });
+            } else {
+              return reject(data.error);
             }
+          }
 
-            return resolve(data);
-          });
-        })
-        .on("error", (err) => {
-          return reject(err.message);
-        })
-        .end();
+          return resolve(data);
+        });
+      });
+
+      req.on("error", (err) => {
+        return reject(err.message);
+      });
+
+      if (postData) {
+        req.write(postData);
+      }
+
+      req.end();
     });
   }
 }
